@@ -30,10 +30,10 @@ How to deal with inconsistency between migration and population structure?
 - Alicia M Korpach, Evelien de Greef, Levi Newediuk, Chloé Schmidt, Colin J Garroway, Matt J Thorstensen, Moving to mate? Migration strategy does not predict genetic structure or diversity in bats (Chiroptera), Biological Journal of the Linnean Society, Volume 145, Issue 3, July 2025, blae068, https://doi.org/10.1093/biolinnean/blae068 
 
 How social behaviours of bats affect population structure?
-- A cautionary note on using STRUCTURE to detect hybridization in a phylogenetic context. https://link.springer.com/article/10.1007/s00265-022-03265-8
+-  Maternity colony social structure of myotis in British Columbia, Canada. https://link.springer.com/article/10.1007/s00265-022-03265-8
 
 Limitations of STRUCTURE:
-- https://onlinelibrary.wiley.com/doi/full/10.1111/jse.70013
+- A cautionary note on using STRUCTURE to detect hybridization in a phylogenetic context. https://onlinelibrary.wiley.com/doi/full/10.1111/jse.70013
 
 Previous studies on MYLU population structure
 - Burns, Lynne E., Hugh G. Broders, and Timothy R. Frasier. "Characterization of 11 tetranucleotide microsatellite loci for the little brown bat (Myotis lucifugus) based on in silico genome sequences." Conservation Genetics Resources 4.3 (2012): 653-655.
