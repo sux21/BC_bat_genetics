@@ -1,6 +1,6 @@
 # questions of the work
 
-How the population structure help conservation of bats? populations that are separated may need to be received probiotics independently. 
+How the population structure help conservation of bats? populations that are separated may need to be received probiotics independently. Can bats spread probiotics by contacting each other? 
 
 Choices of sample size and sampling site
 - For each site, increase sample sizes to at least 10
