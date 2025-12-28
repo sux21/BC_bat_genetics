@@ -43,7 +43,7 @@ Limitations of STRUCTURE:
 
 Previous studies on MYLU population structure
 - Burns, Lynne E., Hugh G. Broders, and Timothy R. Frasier. "Characterization of 11 tetranucleotide microsatellite loci for the little brown bat (Myotis lucifugus) based on in silico genome sequences." Conservation Genetics Resources 4.3 (2012): 653-655.
-- Burns, Lynne E., Timothy R. Frasier, and Hugh G. Broders. "Genetic connectivity among swarming sites in the wide ranging and recently declining little brown bat (M yotis lucifugus)." Ecology and Evolution 4.21 (2014): 4130-4149.
+- Burns, Lynne E., Timothy R. Frasier, and Hugh G. Broders. "Genetic connectivity among swarming sites in the wide ranging and recently declining little brown bat (Myotis lucifugus)." Ecology and Evolution 4.21 (2014): 4130-4149.
 - Johnson, Laura NL, et al. "Population genetic structure within and among seasonal site types in the little brown bat (Myotis lucifugus) and the northern long-eared bat (M. septentrionalis)." PLoS One 10.5 (2015): e0126309.
 - McLeod, B. A., et al. "Effect of oceanic straits on gene flow in the recently endangered little brown bat (Myotis lucifugus) in maritime Canada: implications for the spread of white-nose syndrome." Canadian Journal of Zoology 93.6 (2015): 427-437.
 - Davy, Christina M., et al. "Prelude to a panzootic: Gene flow and immunogenetic variation in northern little brown myotis vulnerable to bat white-nose syndrome." Facets 2.2 (2017): 690-714.
@@ -58,7 +58,8 @@ Previous studies on MYLU population structure
 - Wilder, Aryn P. Spatial, ecological and genetic correlates of the geographic expansion of an infectious disease, white-nose syndrome in bats. Diss. Boston University, 2014.
 - Blejwas, Karen M., et al. "The Milieu Souterrain Superficiel as hibernation habitat for bats: implications for white-nose syndrome." Journal of Mammalogy 102.4 (2021): 1110-1127.
 - Dixon, Michael D. "Population genetic structure and natal philopatry in the widespread North American bat Myotis lucifugus." Journal of Mammalogy 92.6 (2011): 1343-1351.
-- Lausen, C. L. (2007) Roosting ecology and landscape genetics of prairie bats. Ph.D. diss., University of Calgary. 
+- Lausen, C. L. (2007) Roosting ecology and landscape genetics of prairie bats. Ph.D. diss., University of Calgary.
+- 
   
 No published studies on population sturcture on MYYU except ours (https://www.mdpi.com/2076-2615/15/4/578)
 
