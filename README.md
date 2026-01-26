@@ -1,9 +1,13 @@
-# questions of the work
+**Main questions**
+- What is the population structure of little brown myotis and Yuma myotis bats? 
+- How are they different?
+- How can it be explained by landscape factors?
+
 
 How the population structure help conservation of bats? 
 - Low population structure may indicate gene flow between populations (mating occurs between different populations).
 - This can cause white-nose syndrome disease to spread from affected to unaffected populations.
-- This can also cause the probiotics to spread from applied populatons to new populations. Can bats spread probiotics by contacting each other? 
+- This can also cause the probiotics to spread from applied populatons to new populations. Can bats spread probiotics by contacting each other? Yes, but probiotic won't keep staying in the environment and is needed to be provided to bats continuously. 
 
 Choices of sample size and sampling site
 - For each site, increase sample sizes to at least 10
@@ -85,5 +89,4 @@ OSRIRIS settings:
 - Set up operating procedure: Tools > Lab Settings > Click New > Select LaneStandardOnly_5, enter "Myotis" for new procedure name > Under General tab, Internal Lane Standard: ABI-LIZ-600-100-TO-600, keep other options unchanged > Under Thresholds tab, enter 1000 in the Analysis Threshold (RFU) at Sample. This should automatically enter 1000 for the 4 colors. Keep the Ladder and ILS at 150. Keep all other options unchanged > Click Apply. 
 - To do analysis, go to File > New Analysis... > Choose your input and output directories, double check the Operating Procedure Name is Myotis and Minimum RFU for Analysis, Detection, Interlocus are 1000 for Sample and the 4 colors. 
 - Set up export of results to tab delimited file: Tools > Export File Settings > Select SpreadSheetUtils.xsl for XSL file, keep other options unchanged, click Next > Keep parameter settings unchanged, click Next. 
-- After running the analysis, results can be exported by the following steps: File > Export Spreadsheet... > Check the following options: Show Channel Number In Column Heading, Include Pos Controls, Include Neg. Controls, Include Ladder Samples, Include Disabled Samples. Keep other options unchanged.
-
+- After running the analysis, results can be exported by the following steps: File > Export Spreadsheet... > Ingore the Alert message and click "Yes" > Check the following options: Show Channel Number In Column Heading, Include Pos Controls, Include Neg. Controls, Include Ladder Samples, Include Disabled Samples. Keep other options unchanged.
