@@ -4,13 +4,17 @@ source("scripts/allele_calling_helper.R")
 
 
 # set parameters
-num_channels <- 4 # number of colour channels in OSIRIS output. This may not equal to how many colours used
+ploidy <- 2 # ploidy of organism, number of allelic peaks to be selected
 control <- c("negative", "NEG", "Ladder") # negative control and size standard
-min_off_rfu <- 27000 # minimum RFU to find an off-scale peak
-ru_len <- 4 # maximum microsatellite repeat unit length
-pull_up_dist <- 0.5 # base pair distance around off-scale peak to find pull-up
-max_dist_A_addition = 1.5 # maximum base pair distance to find non-template addition
-max_dist_split_peaks = 1 # maximum base pair distance to find off-scale split peaks
+min_off_rfu <- 27000 # minimum light intensity to find an off-scale peak
+ru_len <- 4 # repeat unit length, base pair distance to look for stutters
+off_dist <- 0.5 # base pair distance around off-scale peak to find pull-up
+A_dist <- 1.5 # base pair distance to find non-template addition
+split_dist <- 1 # base pair distance to find off-scale split peaks
+peaks_ratio <- 0.25 # minimum ratio of light intensity of heterozygous peaks
+noise_level <- 100 # no extra peaks above shortest allelic peak - this number  
+
+
 
 
 # load data
@@ -22,22 +26,84 @@ osiris_out <- lapply(osiris_paths, load_osiris_tab)
 names(osiris_out) <- osiris_files
 
 
-# test the functions on one of the data
-osiris_test <- osiris_out[["fragment_analysis_mobix_2024-02-28_1.tab"]]
+
+
+View(osiris_out[["fragment_analysis_mobix_2024-02-28_1.tab"]])
+
 
 # remove pull-up 
-osiris_test2 <- remove_pull_up_all(osiris_test
-                                   , control
-                                   , min_off_rfu
-                                   , ru_len
-                                   , pull_up_dist)
-
-# average off-scale split peaks
-
-average_split(osiris_test2,54, min_off_rfu, max_dist_split_peaks)
+osiris_out2 <- lapply(osiris_out
+                      , remove_pull_up_all
+                      , control
+                      , min_off_rfu
+                      , ru_len
+                      , off_dist)
 
 
 
+# replace off-scale split peaks with its mean
+osiris_out3 <- lapply(osiris_out2
+                      , replace_split_by_mean_all
+                      , control
+                      , min_off_rfu
+                      , split_dist)
+
+
+
+# select the highest peak in non-template addition
+osiris_out4 <- lapply(osiris_out3
+                      , remove_A_addition_all
+                      , control
+                      , A_dist)
+
+
+
+
+# select allelic peaks
+osiris_out5 <- lapply(osiris_out4
+                      , allele_caller_all
+                      , control
+                      , ploidy
+                      , peaks_ratio
+                      , noise_level)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+for (i in 1:length(osiris_out4[[17]]$File.Name)) {
+  
+print(i)
+  }
+
+allele_caller(osiris_out4[[17]]
+                , 95
+                , ploidy
+                , peaks_ratio
+                , noise_level) 
+
+samples <- osiris_out2[[17]]
 # remove fragments found in control samples (negative control, size standard) 
 # which shouldn't have any fragments.
 
@@ -50,52 +116,28 @@ sample <- remove_cont(osiris_test, control)
 
 
 
+# transform the data 
+osiris_out$sample <- with(osiris_out, sub("--.*", "", Sample.Name))
+
+osiris_out$multiplex <- with(osiris_out, sub(".*--", "", Sample.Name))
+
+osiris_out$Locus <- paste(osiris_out$Locus, osiris_out$multiplex, sep = "_")
+
+osiris_out3$Locus <- paste(osiris_out3$Locus, osiris_out3$multiplex, sep = "_")
+
+osiris_out4 <- ( osiris_out3 
+                 |> reshape(drop = c("Sample.Name", "RFU", "multiplex")
+                            , idvar = "sample"
+                            , timevar = c("Locus")
+                            , direction = "wide"
+                 )
+)
 
 
-
-
-min_rfu = 27000
-dist_to_stutter = 4
-dist_to_pull_up = 0.5
-per_sample <- remove_pull_up(osiris_out, "E01_0728-12--M1_004_5759", 
-                             min_rfu, dist_to_stutter, dist_to_pull_up)
-print(per_sample)
-
-# To do: loop through all samples in the data frame for removing pull-up
-# To do: write another function for adjacent off-scale peaks, replace with mean of these adjacent peaks
-# To do: reformat the select_alleles function
-
-
-
-
-# 
-# pull_up_intensity <- vector(mode = "list", length = 4)
-# 
-# for (i in seq_along(intensity_4channel)) {
-#   pull_up_intensity[[i]] <- intensity_4channel[[i]][index[[i]]]
-# }
-# print(pull_up_intensity)
-
-# # remove adjacent peaks which cannot be pull-up
-# max_dist_adj_peaks = 1.5
-# 
-# adj_index <- lapply(pull_up, find_adjacent_values, max_dist_adj_peaks)
-# 
-# 
-# 
-# pull_up2 <- vector(mode = "list", length = 4)
-# 
-# for (i in seq_along(pull_up)) {
-#   if (unique(is.na(adj_index[[i]]))) {
-#     pull_up2[[i]] <- pull_up[[i]]
-#   } else{
-#     pull_up2[[i]] <- pull_up[[i]][-adj_index[[i]]]
-#   }
-# }
-# print(pull_up2)
-# return a list of 4 numeric vectors of pull-up sizes 
-
-# function 1: remove pull-up signals
-
-# function 2: average split peaks
+samples <- osiris_out4[[49]]
+spl_dat <- get_sample_dat(samples, "A04_230706-22A--M2_016_6118")
+off <- get_off_scale(spl_dat, min_off_rfu)
+print(off)
+off_size2 <- remove_high_pull_up(spl_dat, off, ru_len)
+pull_up_index <- find_pull_up(spl_dat, off_size2, off_dist)
 
