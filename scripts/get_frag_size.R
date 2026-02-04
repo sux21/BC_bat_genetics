@@ -6,6 +6,7 @@ source("scripts/allele_calling_helper.R")
 # set parameters
 ploidy <- 2 # ploidy of organism, number of allelic peaks to be selected
 control <- c("negative", "NEG", "Ladder") # negative control and size standard
+separator <- "--" # character separating the sample name and primer name
 min_off_rfu <- 27000 # minimum light intensity to find an off-scale peak
 ru_len <- 4 # repeat unit length, base pair distance to look for stutters
 off_dist <- 0.5 # base pair distance around off-scale peak to find pull-up
@@ -82,31 +83,29 @@ osiris_out5 <- lapply(osiris_out4
 
 # remove fragments found in control samples (negative control, size standard) 
 # which shouldn't have any fragments.
+osiris_out6 <- lapply(osiris_out5
+                      , remove_contamination_all
+                      , control
+                      , cont_dist)
+
 # Note: this removal is by colours but not loci. Contamination in "green"
 # channel is only used to remove sample fragments in "green" channel. However,
-# when two loci are both "green", contamination shown in control of the first 
-# locus will be used to remove fragments in the second locus. 
+# if there are two loci are both "green", contamination shown in control of 
+# the first locus will be used to remove fragments in the second locus. 
 
-osiris_test <- osiris_out5$`fragment_analysis_mobix_2025-06-26_plate2_1.tab`
-t <- find_contamination(osiris_test, control)
-print(t)
 
-# 
-# 
-# 
-# # transform the data 
-# osiris_out$sample <- with(osiris_out, sub("--.*", "", Sample.Name))
-# 
-# osiris_out$multiplex <- with(osiris_out, sub(".*--", "", Sample.Name))
-# 
-# osiris_out$Locus <- paste(osiris_out$Locus, osiris_out$multiplex, sep = "_")
-# 
-# osiris_out3$Locus <- paste(osiris_out3$Locus, osiris_out3$multiplex, sep = "_")
-# 
-# osiris_out4 <- ( osiris_out3 
-#                  |> reshape(drop = c("Sample.Name", "RFU", "multiplex")
-#                             , idvar = "sample"
-#                             , timevar = c("Locus")
-#                             , direction = "wide"
-#                  )
-# )
+
+
+
+
+
+# transform the data
+osiris_out7 <- lapply(osiris_out6
+                      , long_to_wide_data
+                      , control)
+
+
+
+
+# People should always inspect the data again and correct any errors created by
+# this script. 

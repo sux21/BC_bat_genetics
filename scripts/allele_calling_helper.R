@@ -32,9 +32,9 @@ index_vec <- function(x) {
 }
 
 #'@param x a vector
-#'@return NA if length of x is zero
+#'@return NA if length of x is zero or x is NULL
 length_zero_to_na <- function(x) {
-  ifelse(length(x) == 0, return(NA), return(x))
+  ifelse(length(x) == 0 || is.null(x), return(NA), return(x))
 }
 
 #'@param x a vector
@@ -59,11 +59,13 @@ remove_subset <- function(x, remove_index) {
   }
 }
 
-#'@param x a character string separated by comma
+#'@param x a character string of numbers separated by comma
 #'@retrun a numeric vector
 chr_to_num <- function(x) {
   if (is.na(x)) {
     out <- NA
+  } else if (grepl(paste(c(LETTERS, letters), collapse = "|"), x)) {
+    out <- x
   } else {
     out <- as.numeric(unlist(strsplit(x, ",")))
   }
@@ -109,13 +111,27 @@ replace_with_mean <- function(x, val_to_replace, group) {
   return(x)
 }
 
-#'@param x a numeric vector
-#'@param y a numeric vector
-#'@return a numeric vector with y removed from x
-remove_y_from_x <- function(x, y) {
-  y_rm <- which(! x %in% y)
-  return(x[y_rm])
+#'@param x a vector
+#'@param y a vector
+#'@param new_chr a character string
+#'@return the character string if y is not NA
+replace_num_with_chr <- function(x, y, new_chr) {
+  if (all(is.na(y))) {
+    out <- x
+  } else {
+    out <- new_chr
+  }
+  return(out)
 }
+
+#' 
+#' #'@param x a numeric vector
+#' #'@param y a numeric vector
+#' #'@return a numeric vector with y removed from x
+#' remove_y_from_x <- function(x, y) {
+#'   y_rm <- which(! x %in% y)
+#'   return(x[y_rm])
+#' }
 
 #'@param x a numeric vector
 #'@param y a numeric vector contained in x
@@ -582,21 +598,126 @@ allele_caller_all <- function(f, ctrl, ploidy, peaks_ratio, noise_level) {
 
 #'@param f OSIRIS tab-delimited file
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
-#'@param cont_dist base pair distance around peaks in control to be also treated as contamination
-#'@return OSIRIS tab-delimited file with contamination removed
-remove_contamination <- function(f, ctrl, cont_dist){
+#'@return a list with fragment sizes in control
+get_contamination <- function(f, ctrl){
   ctrl_sample <- find_ctrl(f, ctrl)
   ctrl_dat <- f[ctrl_sample,]
   cont <- split(ctrl_dat$Allele, factor(ctrl_dat$Locus))
   cont <- lapply(cont, chr_to_num_vec)
-  
-  sample_dat <- f[!ctrl_sample,]
-  sample_name <- unique(sample_dat$File.Name)
-  
-  f2 <- f
-  
-  
   return(cont)
 }
 
+#'@param f OSIRIS tab-delimited file
+#'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
+#'@param cont_dist base pair distance around peaks in control to be also treated as contamination
+#'@return a list of integer index of where is contamination in sample
+find_contamination <- function(f, s, ctrl, cont_dist) {
+  spl_dat <- get_sample_dat(f, s)
+  frag_size <- spl_dat$size
+  num_colours <- length(frag_size)
+  
+  cont <- get_contamination(f, ctrl)
+  
+  cont_index <- vector(mode = "list", length = num_colours)
+  
+  for (i in seq_along(cont)) { # contamination colour channels
+    for (j in seq_along(cont[[i]])) {
+      current_cont <- cont[[i]][j] # each contamination fragment in a channel
+      
+      if (is.na(current_cont) || !is.numeric(frag_size[[i]])) { next }
+      
+      left_side <- ( current_cont - cont_dist )
+      right_side <- ( current_cont + cont_dist )
+      
+      pos <- which(frag_size[[i]] >= left_side & frag_size[[i]] <= right_side)
+      
+      cont_index[[i]] <- ( cont_index[[i]] 
+                           |> append(pos) 
+                           |> unique() 
+                           |> sort() )
+    }
+    cont_index[[i]] <- length_zero_to_na(cont_index[[i]])
+  }
+  return(cont_index)
+}
 
+#'@param f OSIRIS tab-delimited file
+#'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
+#'@param cont_dist base pair distance around peaks in control to be also treated as contamination
+#'@return character string of fragment size or "contaminated"
+remove_contamination <- function(f, s, ctrl, cont_dist) {
+  spl_dat <- get_sample_dat(f, s)
+  frag_size <- spl_dat$size
+  frag_rfu <- spl_dat$intensity
+  
+  cont_index <- find_contamination(f, s, ctrl, cont_dist)
+  
+  frag_size2 <- lapply(seq_along(frag_size)
+                       , function(i) {
+                         replace_num_with_chr(frag_size[[i]]
+                                              , cont_index[[i]]
+                                              , "contaminated")
+                       })
+  
+  frag_rfu2 <- lapply(seq_along(frag_rfu)
+                      , function(i) {
+                        replace_num_with_chr(frag_rfu[[i]]
+                                             , cont_index[[i]]
+                                             , "contaminated")
+                      })
+  
+  frag_size2 <- lapply(frag_size2, num_to_chr)
+  frag_rfu2 <- lapply(frag_rfu2, num_to_chr)
+  
+  out <- list(frag_size2, frag_rfu2)
+  names(out) <- c("size", "intensity")
+  return(out)
+}
+
+#'@param f OSIRIS tab-delimited file
+#'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
+#'@param cont_dist base pair distance around peaks in control to be also treated as contamination
+#'@return OSIRIS tab-delimited file with contamination removed
+remove_contamination_all <- function(f, ctrl, cont_dist) {
+  ctrl_sample <- find_ctrl(f, ctrl)
+  sample <- f[!ctrl_sample,]
+  sample_name <- unique(sample$File.Name)
+  
+  f2 <- f[,c("File.Name", "Locus", "Allele", "RFU")]
+  
+  for (i in seq_along(sample_name)) {
+    current_sample <- sample_name[i]
+    
+    out <- remove_contamination(f, current_sample, ctrl, cont_dist)
+    
+    current_rows <- which(f2$File.Name %in% sample_name[i])
+    
+    for (j in seq_along(current_rows)) {
+      r <- current_rows[j]
+      
+      f2[r,]$Allele <- out[["size"]][[j]]
+      f2[r,]$RFU <- out[["intensity"]][[j]]
+    }
+  }
+  return(f2)
+}
+
+#'@param f OSIRIS tab-delimited file
+#'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
+#'@return data frame in wide format
+long_to_wide_data <- function(f, ctrl) {
+  ctrl_sample <- find_ctrl(f, ctrl)
+  f <- f[!ctrl_sample,]
+  
+  f$Locus <- gsub("Channel1-1", "BLUE",
+                  gsub("Channel2-2", "GREEN",
+                       gsub("Channel3-3", "YELLOW",
+                            gsub("Channel4-4", "RED", f$Locus))))
+  
+  f2 <- ( f
+          |> reshape(drop = c("RFU")
+                     , idvar = "File.Name"
+                     , timevar = c("Locus")
+                     , direction = "wide"))
+  return(f2)
+} 
