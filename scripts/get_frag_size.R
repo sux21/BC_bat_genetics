@@ -11,9 +11,9 @@ ru_len <- 4 # repeat unit length, base pair distance to look for stutters
 off_dist <- 0.5 # base pair distance around off-scale peak to find pull-up
 A_dist <- 1.5 # base pair distance to find non-template addition
 split_dist <- 1 # base pair distance to find off-scale split peaks
-peaks_ratio <- 0.25 # minimum ratio of light intensity of heterozygous peaks
+peaks_ratio <- 0.1 # minimum ratio of light intensity of heterozygous peaks
 noise_level <- 100 # no extra peaks above shortest allelic peak - this number  
-
+cont_dist <- 0.5 # base pair distance around peaks in control to be treated as contamination
 
 
 
@@ -28,7 +28,6 @@ names(osiris_out) <- osiris_files
 
 
 
-View(osiris_out[["fragment_analysis_mobix_2024-02-28_1.tab"]])
 
 
 # remove pull-up 
@@ -41,20 +40,29 @@ osiris_out2 <- lapply(osiris_out
 
 
 
+
+
 # replace off-scale split peaks with its mean
 osiris_out3 <- lapply(osiris_out2
-                      , replace_split_by_mean_all
+                      , get_mean_split_all
                       , control
                       , min_off_rfu
                       , split_dist)
 
 
 
+
+
+
 # select the highest peak in non-template addition
 osiris_out4 <- lapply(osiris_out3
-                      , remove_A_addition_all
+                      , get_high_A_all
                       , control
                       , A_dist)
+
+
+
+
 
 
 
@@ -72,72 +80,33 @@ osiris_out5 <- lapply(osiris_out4
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-for (i in 1:length(osiris_out4[[17]]$File.Name)) {
-  
-print(i)
-  }
-
-allele_caller(osiris_out4[[17]]
-                , 95
-                , ploidy
-                , peaks_ratio
-                , noise_level) 
-
-samples <- osiris_out2[[17]]
 # remove fragments found in control samples (negative control, size standard) 
 # which shouldn't have any fragments.
+# Note: this removal is by colours but not loci. Contamination in "green"
+# channel is only used to remove sample fragments in "green" channel. However,
+# when two loci are both "green", contamination shown in control of the first 
+# locus will be used to remove fragments in the second locus. 
 
-# Note: this will remove fragments in any multiplexes. 
-# For example, fragments in multiplex 3 of a sample will be removed 
-# if these fragments are found in multiplex 1 of negative control.
-sample <- remove_cont(osiris_test, control) 
+osiris_test <- osiris_out5$`fragment_analysis_mobix_2025-06-26_plate2_1.tab`
+t <- find_contamination(osiris_test, control)
+print(t)
 
-
-
-
-
-# transform the data 
-osiris_out$sample <- with(osiris_out, sub("--.*", "", Sample.Name))
-
-osiris_out$multiplex <- with(osiris_out, sub(".*--", "", Sample.Name))
-
-osiris_out$Locus <- paste(osiris_out$Locus, osiris_out$multiplex, sep = "_")
-
-osiris_out3$Locus <- paste(osiris_out3$Locus, osiris_out3$multiplex, sep = "_")
-
-osiris_out4 <- ( osiris_out3 
-                 |> reshape(drop = c("Sample.Name", "RFU", "multiplex")
-                            , idvar = "sample"
-                            , timevar = c("Locus")
-                            , direction = "wide"
-                 )
-)
-
-
-samples <- osiris_out4[[49]]
-spl_dat <- get_sample_dat(samples, "A04_230706-22A--M2_016_6118")
-off <- get_off_scale(spl_dat, min_off_rfu)
-print(off)
-off_size2 <- remove_high_pull_up(spl_dat, off, ru_len)
-pull_up_index <- find_pull_up(spl_dat, off_size2, off_dist)
-
+# 
+# 
+# 
+# # transform the data 
+# osiris_out$sample <- with(osiris_out, sub("--.*", "", Sample.Name))
+# 
+# osiris_out$multiplex <- with(osiris_out, sub(".*--", "", Sample.Name))
+# 
+# osiris_out$Locus <- paste(osiris_out$Locus, osiris_out$multiplex, sep = "_")
+# 
+# osiris_out3$Locus <- paste(osiris_out3$Locus, osiris_out3$multiplex, sep = "_")
+# 
+# osiris_out4 <- ( osiris_out3 
+#                  |> reshape(drop = c("Sample.Name", "RFU", "multiplex")
+#                             , idvar = "sample"
+#                             , timevar = c("Locus")
+#                             , direction = "wide"
+#                  )
+# )
