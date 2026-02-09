@@ -25,13 +25,6 @@ which_not_max <- function(x) {
 }
 
 #'@param x a vector
-#'@return x with index as names
-index_vec <- function(x) {
-  x <- setNames(x, seq_along(x))
-  return(x)
-}
-
-#'@param x a vector
 #'@return NA if length of x is zero or x is NULL
 length_zero_to_na <- function(x) {
   ifelse(length(x) == 0 || is.null(x), return(NA), return(x))
@@ -39,7 +32,7 @@ length_zero_to_na <- function(x) {
 
 #'@param x a vector
 #'@param select_index an integer index to select elements at these positions
-#'@return x if i is NA, else return subset of x
+#'@return x if select_index is NA, else return subset of x
 select_subset <- function(x, select_index) {
   if (all(is.na(select_index))) {
     return(x)
@@ -50,7 +43,7 @@ select_subset <- function(x, select_index) {
 
 #'@param x a vector
 #'@param remove_index an integer index to remove elements at these positions
-#'@return x if i is NA, else return subset of x
+#'@return x if remove_index is NA, else return subset of x
 remove_subset <- function(x, remove_index) {
   if (all(is.na(remove_index))) {
     return(x)
@@ -72,7 +65,7 @@ chr_to_num <- function(x) {
   return(out)
 }
 
-#'@param x a character vector
+#'@param x a character vector of numbers separated by comma
 #'@return a numeric vector
 chr_to_num_vec <- function(x) {
   out <- ( sapply(x, FUN = chr_to_num, USE.NAMES = FALSE) 
@@ -96,7 +89,7 @@ num_to_chr <- function(x) {
 #'@param x a numeric vector
 #'@param val_to_replace values to be replaced by mean
 #'@param group group numbers of values to be replaced
-#'@return a numeric vector x with some values replaced by their means
+#'@return a numeric vector x with grouped values replaced by their means
 replace_with_mean <- function(x, val_to_replace, group) {
   index <- which(x %in% val_to_replace)
   index2 <- aggregate(index ~ group, FUN = max)$index
@@ -124,28 +117,9 @@ replace_num_with_chr <- function(x, y, new_chr) {
   return(out)
 }
 
-#' 
-#' #'@param x a numeric vector
-#' #'@param y a numeric vector
-#' #'@return a numeric vector with y removed from x
-#' remove_y_from_x <- function(x, y) {
-#'   y_rm <- which(! x %in% y)
-#'   return(x[y_rm])
-#' }
-
-#'@param x a numeric vector
-#'@param y a numeric vector contained in x
-#'@return integer index
-find_y_in_x <- function(x, y) {
-  stopifnot(!is.na(x))
-  
-  index <- which(x %in% y)
-  return(index)
-}
-
 #'@param x numeric vector
 #'@param max_diff the maximum difference between two adjacent values
-#'@return integer index where is adjacent values in vector x
+#'@return integer index of adjacent values
 find_adjacent_values <- function(x, max_diff) {
   index <- which(diff(x) <= max_diff)
   
@@ -173,7 +147,7 @@ get_adjacent_values <- function(x, max_diff) {
 
 #'@param x a numeric vector
 #'@param max_diff the maximum difference between two adjacent values
-#'@return a numeric vector of adjacent value's group numbers
+#'@return a list of integer index and group number of adjacent values
 group_adjacent_values <- function(x, max_diff) {
   if (all(is.na(x)) || length(x) == 0 || length(x) == 1) {
     return(NA)
@@ -181,7 +155,6 @@ group_adjacent_values <- function(x, max_diff) {
   
   group <- c() 
   id = 1
-  # adj_val <- get_adjacent_values(x, max_diff)
   adj_index <- find_adjacent_values(x, max_diff)
   
   if (all(is.na(adj_index))) {
@@ -216,7 +189,7 @@ group_adjacent_values <- function(x, max_diff) {
 #'@param x a numeric vector 
 #'@param y a numeric vector with the same length as x
 #'@param max_diff the maximum difference between two adjacent values
-#'@return integer index of x 
+#'@return integer index of adjacent values in x which x with non-maximum y removed
 get_adjacent_x_with_non_max_y <- function(x, y, max_diff) {
   adj_x <- group_adjacent_values(x, max_diff)
   
@@ -239,8 +212,8 @@ get_adjacent_x_with_non_max_y <- function(x, y, max_diff) {
   return(adj_x_no_max_y)
 } 
 
-#'@param f path to osiris tab-delimited output
-#'@return a data frame of osiris tab-delimited output
+#'@param f path to OSIRIS tab-delimited file
+#'@return a data frame
 load_osiris_tab <- function(f) {
   read.table(f, sep = "\t", header = TRUE, na.strings = "")
 }
@@ -274,7 +247,7 @@ get_high_A <- function (f, r, A_dist) {
 #'@param f OSIRIS tab-delimited file
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
 #'@param A_dist maximum base pair distance to find non-template addition
-#'@return OSIRIS tab-delimited file with highest non-template addition peaks selected
+#'@return a data frame
 get_high_A_all <- function(f, ctrl, A_dist) {
   ctrl_sample <- find_ctrl(f, ctrl)
   sample <- f[!ctrl_sample,]
@@ -292,7 +265,7 @@ get_high_A_all <- function(f, ctrl, A_dist) {
 
 #'@param f OSIRIS tab-delimited file
 #'@param s sample name
-#'@return a list of numeric vectors
+#'@return a list of sample fragment size and intensity
 get_sample_dat <- function(f, s) {
   osiris_subset <- subset(f, File.Name == s)
   dat <- split(osiris_subset, seq_len(nrow(osiris_subset)))
@@ -349,7 +322,7 @@ get_off_scale2 <- function(f, s, min_off_rfu, ru_len) {
   
   adj_size <- lapply(frag_size, get_adjacent_values, ru_len)
   
-  # pull-up peaks have no adjacent peaks
+  # pull-up peaks have no stutter
   not_pull_up <- lapply(seq_along(off_size)
                         , function(i) {
                           off_size[[i]] %in% adj_size[[i]]
@@ -358,7 +331,7 @@ get_off_scale2 <- function(f, s, min_off_rfu, ru_len) {
                       , function(i) {
                         off_size[[i]][not_pull_up[[i]]]
                       })
-  off_size2 <- lapply(off_size, length_zero_to_na)
+  off_size2 <- lapply(off_size2, length_zero_to_na)
   return(off_size2)
 }
 
@@ -375,18 +348,21 @@ find_pull_up <- function(f, s, min_off_rfu, ru_len, off_dist) {
   
   pull_up_index <- vector(mode = "list", length = num_colours)
   
-  for (i in seq_along(off_size)) {
-    for (j in seq_along(off_size[[i]])) {
-      for (k in seq_along(off_size)[-i]) {
+  for (i in seq_along(off_size)) { # off-scale channel, i = 1 to 4
+    for (j in seq_along(off_size[[i]])) { # off-scale size in a channel
+      for (k in seq_along(off_size)[-i]) { # not off-scale channel
         
-        if (length(off_size[[i]]) == 0 || length(frag_size[[k]]) == 0) {
+        if (length(off_size[[i]]) == 0 || 
+            length(frag_size[[k]]) == 0) {
           next
         }
         
         left_side = off_size[[i]][j] - off_dist
         right_side = off_size[[i]][j] + off_dist
         
-        pos <- which(frag_size[[k]] >= left_side & frag_size[[k]] <= right_side)
+        pos <- which(frag_size[[k]] >= left_side & 
+                       frag_size[[k]] <= right_side)
+        
         pull_up_index[[k]] <- ( pull_up_index[[k]] 
                                 |> append(pos) 
                                 |> unique() 
@@ -405,7 +381,7 @@ find_pull_up <- function(f, s, min_off_rfu, ru_len, off_dist) {
 #'@param min_off_rfu minimum intensity to find off-scale peaks
 #'@param ru_len repeat unit length, base pair distance to look for stutters
 #'@param off_dist base pair distance around off-scale peak to find pull-up
-#'@return a character string with pull-up fragments removed
+#'@return fragment size and intensity with pull-up removed
 remove_pull_up <- function(f, s, min_off_rfu, ru_len, off_dist) {
   spl_dat <- get_sample_dat(f, s)
   frag_size <- spl_dat$size
@@ -436,7 +412,7 @@ remove_pull_up <- function(f, s, min_off_rfu, ru_len, off_dist) {
 #'@param min_off_rfu minimum intensity to find off-scale peaks
 #'@param ru_len repeat unit length, base pair distance to look for stutters
 #'@param off_dist base pair distance around off-scale peak to find pull-up
-#'@return OSIRIS tab-delimited file with pull up removed
+#'@return a data frame
 remove_pull_up_all <- function(f, ctrl, min_off_rfu, ru_len, off_dist) {
   ctrl_sample <- find_ctrl(f, ctrl)
   sample <- f[!ctrl_sample,]
@@ -465,7 +441,7 @@ remove_pull_up_all <- function(f, ctrl, min_off_rfu, ru_len, off_dist) {
 #'@param r row number
 #'@param min_off_rfu minimum intensity to find off-scale peaks
 #'@param split_dist maximum base pair distance to find off-scale split peaks
-#'@return OSIRIS tab-delimited file with split peaks replaced by mean
+#'@return fragment size and intensity with split off-scale values replaced by mean
 get_mean_split <- function(f, r, min_off_rfu, split_dist) {
   frag_size <- f$Allele[r] |> chr_to_num()
   frag_rfu <- f$RFU[r] |> chr_to_num()
@@ -502,7 +478,7 @@ get_mean_split <- function(f, r, min_off_rfu, split_dist) {
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
 #'@param min_off_rfu minimum intensity to find off-scale peaks
 #'@param split_dist maximum base pair distance to find off-scale split peaks
-#'@return OSIRIS tab-delimited file with split peaks replaced by its mean
+#'@return a data frame
 get_mean_split_all <- function(f, ctrl, min_off_rfu, split_dist) {
   ctrl_sample <- find_ctrl(f, ctrl)
   sample <- f[!ctrl_sample,]
@@ -521,10 +497,11 @@ get_mean_split_all <- function(f, ctrl, min_off_rfu, split_dist) {
 #'@param f OSIRIS tab-delimited file
 #'@param r row number
 #'@param ploidy ploidy of organism, number of allelic peaks to be selected
-#'@param peaks_ratio minimum ratio of light intensity of heterozygous peaks
-#'@param noise_level no extra peaks above shortest allelic peak - this number
+#'@param peak_ratio minimum ratio of light intensity of heterozygous peaks
+#'@param stutter_ratio maximum ratio between stutter and allelic peak
+#'@param noise_level no extra peaks allowed above shortest allelic peak minus this number
 #'@return a list of characters of allelic peaks
-allele_caller <- function(f, r, ploidy, peaks_ratio, noise_level) {
+allele_caller <- function(f, r, ploidy, peak_ratio, stutter_ratio, noise_level) {
   frag_size <- f$Allele[r] |> chr_to_num()
   frag_rfu <- f$RFU[r] |> chr_to_num()
   
@@ -534,25 +511,33 @@ allele_caller <- function(f, r, ploidy, peaks_ratio, noise_level) {
     frag_rfu2 <- num_to_chr(frag_rfu)
   } 
   
-  rfu_dec <- sort(frag_rfu, decreasing = TRUE)
-  
-  noise_max_rfu <- ( rfu_dec[ploidy] - noise_level )
+  rfu_dec <- sort(frag_rfu, decreasing = TRUE, index.return = TRUE)
+  size_dec <- frag_size[rfu_dec$ix]
+    
+  noise_max_rfu <- ( rfu_dec$x[ploidy] - noise_level )
   peaks_above_noise <- frag_rfu[frag_rfu > noise_max_rfu]
   
   # select the number of alleles equal as expected from ploidy
   if (length(peaks_above_noise) == ploidy) {
-    if (rfu_dec[ploidy]/rfu_dec[1] >= peaks_ratio) { # heterozygous
-      frag_rfu2 <- rfu_dec[1:ploidy]
+    if (rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio &&
+        abs(size_dec[ploidy] - size_dec[1]) > ru_len) { # heterozygous
       
-      frag_rfu2_index <- which(frag_rfu %in% frag_rfu2)
-      frag_size2 <- frag_size[frag_rfu2_index] |> num_to_chr()
-      frag_rfu2 <- num_to_chr(frag_rfu2)
+      frag_rfu2 <- rfu_dec$x[1:ploidy] |> num_to_chr()
+      frag_rfu2_index <- rfu_dec$ix[1:ploidy]
+      frag_size2 <- frag_size[frag_rfu2_index] |> sort() |> num_to_chr()
+      
+    } else if (rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio && 
+               abs(size_dec[ploidy] - size_dec[1]) <= ru_len &&
+               rfu_dec$x[ploidy]/rfu_dec$x[1] >= stutter_ratio) { # heterozygous
+      
+      frag_rfu2 <- rfu_dec$x[1:ploidy] |> num_to_chr()
+      frag_rfu2_index <- rfu_dec$ix[1:ploidy]
+      frag_size2 <- frag_size[frag_rfu2_index] |> sort() |> num_to_chr()
+      
     } else { # homozygous
-      frag_rfu2 <- rfu_dec[1]
-      
-      frag_rfu2_index <- which(frag_rfu %in% frag_rfu2)
+      frag_rfu2 <- rfu_dec$x[1] |> num_to_chr()
+      frag_rfu2_index <- rfu_dec$ix[1]
       frag_size2 <- frag_size[frag_rfu2_index] |> num_to_chr()
-      frag_rfu2 <- num_to_chr(frag_rfu2)
     }
   } 
   
@@ -571,9 +556,10 @@ allele_caller <- function(f, r, ploidy, peaks_ratio, noise_level) {
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
 #'@param ploidy ploidy of organism, number of allelic peaks to be selected
 #'@param peaks_ratio minimum ratio of light intensity of heterozygous peaks
-#'@param noise_level no extra peaks above shortest allelic peak - this number
-#'@return OSIRIS tab-delimited file with allelic peak(s) selected
-allele_caller_all <- function(f, ctrl, ploidy, peaks_ratio, noise_level) {
+#'@param stutter_ratio maximum ratio between stutter and allelic peak
+#'@param noise_level no extra peaks above shortest allelic peak minus this number
+#'@return a data frame
+allele_caller_all <- function(f, ctrl, ploidy, peak_ratio, stutter_ratio, noise_level) {
   ctrl_sample <- find_ctrl(f, ctrl)
   sample <- f[!ctrl_sample,]
   
@@ -585,12 +571,14 @@ allele_caller_all <- function(f, ctrl, ploidy, peaks_ratio, noise_level) {
     f2$Allele[i] <- allele_caller(f
                                   , i
                                   , ploidy
-                                  , peaks_ratio
+                                  , peak_ratio
+                                  , stutter_ratio
                                   , noise_level)[["size"]] 
     f2$RFU[i] <- allele_caller(f
                                , i
                                , ploidy
-                               , peaks_ratio
+                               , peak_ratio
+                               , stutter_ratio
                                , noise_level)[["intensity"]]
   }
   return(f2)
@@ -644,7 +632,7 @@ find_contamination <- function(f, s, ctrl, cont_dist) {
 #'@param f OSIRIS tab-delimited file
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
 #'@param cont_dist base pair distance around peaks in control to be also treated as contamination
-#'@return character string of fragment size or "contaminated"
+#'@return character string of fragment size or word "contaminated"
 remove_contamination <- function(f, s, ctrl, cont_dist) {
   spl_dat <- get_sample_dat(f, s)
   frag_size <- spl_dat$size
@@ -677,7 +665,7 @@ remove_contamination <- function(f, s, ctrl, cont_dist) {
 #'@param f OSIRIS tab-delimited file
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
 #'@param cont_dist base pair distance around peaks in control to be also treated as contamination
-#'@return OSIRIS tab-delimited file with contamination removed
+#'@return a data frame
 remove_contamination_all <- function(f, ctrl, cont_dist) {
   ctrl_sample <- find_ctrl(f, ctrl)
   sample <- f[!ctrl_sample,]
@@ -704,7 +692,7 @@ remove_contamination_all <- function(f, ctrl, cont_dist) {
 
 #'@param f OSIRIS tab-delimited file
 #'@param ctrl patterns of control sample name, c("negative", "NEG", "Ladder")
-#'@return data frame in wide format
+#'@return a data frame in wide format
 long_to_wide_data <- function(f, ctrl) {
   ctrl_sample <- find_ctrl(f, ctrl)
   f <- f[!ctrl_sample,]

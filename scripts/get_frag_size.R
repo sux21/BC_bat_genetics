@@ -6,14 +6,14 @@ source("scripts/allele_calling_helper.R")
 # set parameters
 ploidy <- 2 # ploidy of organism, number of allelic peaks to be selected
 control <- c("negative", "NEG", "Ladder") # negative control and size standard
-separator <- "--" # character separating the sample name and primer name
-min_off_rfu <- 27000 # minimum light intensity to find an off-scale peak
+min_off_rfu <- 20000 # minimum light intensity to find an off-scale peak
 ru_len <- 4 # repeat unit length, base pair distance to look for stutters
 off_dist <- 0.5 # base pair distance around off-scale peak to find pull-up
 A_dist <- 1.5 # base pair distance to find non-template addition
 split_dist <- 1 # base pair distance to find off-scale split peaks
-peaks_ratio <- 0.1 # minimum ratio of light intensity of heterozygous peaks
-noise_level <- 100 # no extra peaks above shortest allelic peak - this number  
+peak_ratio <- 0.1 # minimum ratio of light intensity of heterozygous peaks
+stutter_ratio <- 0.5 # maximum ratio between stutter and allelic peak
+noise_level <- 100 # no extra peaks above shortest allelic peak minus this number  
 cont_dist <- 0.5 # base pair distance around peaks in control to be treated as contamination
 
 
@@ -39,7 +39,8 @@ osiris_out2 <- lapply(osiris_out
                       , ru_len
                       , off_dist)
 
-
+# Note: when allelic peaks overlap, the shorter peak may be treated as
+# pull-up and gets removed.
 
 
 
@@ -73,7 +74,8 @@ osiris_out5 <- lapply(osiris_out4
                       , allele_caller_all
                       , control
                       , ploidy
-                      , peaks_ratio
+                      , peak_ratio
+                      , stutter_ratio
                       , noise_level)
 
 
@@ -81,8 +83,7 @@ osiris_out5 <- lapply(osiris_out4
 
 
 
-# remove fragments found in control samples (negative control, size standard) 
-# which shouldn't have any fragments.
+# remove fragments found in control (negative control, size standard) 
 osiris_out6 <- lapply(osiris_out5
                       , remove_contamination_all
                       , control
@@ -91,7 +92,7 @@ osiris_out6 <- lapply(osiris_out5
 # Note: this removal is by colours but not loci. Contamination in "green"
 # channel is only used to remove sample fragments in "green" channel. However,
 # if there are two loci are both "green", contamination shown in control of 
-# the first locus will be used to remove fragments in the second locus. 
+# the first locus will be also used to remove fragments in the second locus. 
 
 
 
@@ -106,6 +107,29 @@ osiris_out7 <- lapply(osiris_out6
 
 
 
-
+names(osiris_out7)[30]
+View(osiris_out7[[30]])
 # People should always inspect the data again and correct any errors created by
 # this script. 
+
+# 
+# get_off_scale2(osiris_out[[30]], "A11_24SP0175--M3_048_6010", min_off_rfu, ru_len)
+# 
+# find_pull_up(osiris_out[[30]], "A11_24SP0175--M3_048_6010", min_off_rfu
+#              , ru_len, off_dist)
+# 
+# ( get_sample_dat(osiris_out[[30]], "A11_24SP0175--M3_048_6010")$size[[4]] 
+#   |> get_adjacent_values(ru_len))
+
+
+# 
+# Articles to read more about:  
+#   - Reliable Genotyping of Samples with Very Low DNA Quantities Using PCR 
+# - How to track and assess genotyping errors in population genetics studies
+# 
+# 
+# 
+# 
+# General allele scoring guideline:
+#   - Follow previous scoring practice. Fit into their allele class as best as I can. But if I have enough evidence there is new allele, the new allele can be recorded. Sequence the new allele to confirm. 
+
