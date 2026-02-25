@@ -72,6 +72,8 @@ bat migration
 
 white-nose syndrome management
 - Whiting‐Fawcett, Flora, et al. "A Palearctic view of a bat fungal disease." Conservation Biology 39.1 (2025): e14265.
+- Strategies and limitations of the bat immune response to Pseudogymnoascus destructans: the causative agent of white-nose syndrome. https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2025.1736823/full
+- Survival of hibernating little brown bats that are unaffected by white-nose syndrome: Using thermal cameras to understand arousal behavior. https://pmc.ncbi.nlm.nih.gov/articles/PMC10846716/
 
 vampire bat population structure:
 - A preliminary assessment of population genetic structure of the common vampire bat (Desmodus rotundus) in Colombia. https://peerj.com/articles/20306/.
@@ -85,7 +87,7 @@ Genome assembly:
 
 
 
-OSRIRIS settings:
+OSIRIS settings:
 - Set up operating procedure: Tools > Lab Settings > Click New > Select LaneStandardOnly_5, enter "Myotis" for new procedure name > Under General tab, Internal Lane Standard: ABI-LIZ-600-100-TO-600, keep other options unchanged > Under Thresholds tab, enter 1000 in the Analysis Threshold (RFU) at Sample. This should automatically enter 1000 for the 4 colors. Keep the Ladder and ILS at 150. Keep all other options unchanged > Click Apply. 
 - To do analysis, go to File > New Analysis... > Choose your input and output directories, double check the Operating Procedure Name is Myotis and Minimum RFU for Analysis, Detection, Interlocus are 1000 for Sample and the 4 colors. 
 - Set up export of results to tab delimited file: Tools > Export File Settings > Select SpreadSheetUtils.xsl for XSL file, keep other options unchanged, click Next > Keep parameter settings unchanged, click Next. 

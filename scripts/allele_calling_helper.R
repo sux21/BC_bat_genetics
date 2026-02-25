@@ -147,7 +147,7 @@ get_adjacent_values <- function(x, max_diff) {
 
 #'@param x a numeric vector
 #'@param max_diff the maximum difference between two adjacent values
-#'@return a list of integer index and group number of adjacent values
+#'@return a list of values, integer index, and group number of adjacent values
 group_adjacent_values <- function(x, max_diff) {
   if (all(is.na(x)) || length(x) == 0 || length(x) == 1) {
     return(NA)
@@ -155,26 +155,27 @@ group_adjacent_values <- function(x, max_diff) {
   
   group <- c() 
   id = 1
+  adj_val <- get_adjacent_values(x, max_diff)
   adj_index <- find_adjacent_values(x, max_diff)
   
-  if (all(is.na(adj_index))) {
+  if (all(is.na(adj_val))) {
     return(NA)
   }
   
-  for (i in seq_along(adj_index)) {
+  for (i in seq_along(adj_val)) {
     if (i == 1 ) { # first value is always put in group 1
       group <- append(group, 1)
     }
-    if (i > 1 && i < length(adj_index)) { # middle values
-      if (adj_index[i] - adj_index[i-1] <= 1) {
+    if (i > 1 && i < length(adj_val)) { # middle values
+      if (adj_val[i] - adj_val[i-1] <= max_diff) {
         group <- append(group, id)
       } else {
         id = id + 1
         group <- append(group, id) 
       }
     }
-    if (i == length(adj_index)) { # last value
-      if (adj_index[i] - adj_index[i-1] <= 1) {
+    if (i == length(adj_val)) { # last value
+      if (adj_val[i] - adj_val[i-1] <= max_diff) {
         group <- append(group, id)
       } else {
         id = id + 1
@@ -182,7 +183,7 @@ group_adjacent_values <- function(x, max_diff) {
       }
     }
   }
-  out <- list(index = adj_index, group = group)
+  out <- list(value = adj_val, index = adj_index, group = group)
   return(out)
 }
 
@@ -335,6 +336,7 @@ get_off_scale2 <- function(f, s, min_off_rfu, ru_len) {
   return(off_size2)
 }
 
+
 #'@param spl_dat a list of sample fragment size and intensity
 #'@param off_size a list of off-scale fragment sizes
 #'@param off_dist base pair distance around off-scale peak to find pull-up
@@ -398,10 +400,10 @@ remove_pull_up <- function(f, s, min_off_rfu, ru_len, off_dist) {
                       , function(i) {
                         remove_subset(frag_rfu[[i]], pull_up_index[[i]])
                       })
-
+  
   frag_size2 <- lapply(frag_size2, num_to_chr)
   frag_rfu2 <- lapply(frag_rfu2, num_to_chr)
-
+  
   out <- list(frag_size2, frag_rfu2)
   names(out) <- c("size", "intensity")
   return(out)
@@ -516,23 +518,42 @@ allele_caller <- function(f, r, ploidy, peak_ratio, stutter_ratio, noise_level) 
     
   noise_max_rfu <- ( rfu_dec$x[ploidy] - noise_level )
   peaks_above_noise <- frag_rfu[frag_rfu > noise_max_rfu]
+  # 
+  # allele_out <- function(rfu_dec, frag_size, ploidy) {
+  #   frag_rfu2 <- rfu_dec$x[1:ploidy] |> num_to_chr()
+  #   frag_rfu2_index <- rfu_dec$ix[1:ploidy]
+  #   frag_size2 <- frag_size[frag_rfu2_index] |> num_to_chr()
+  #   
+  #   out <- list(frag_size2, frag_rfu2)
+  #   names(out) <- c("size", "intensity")
+  #   return(out)
+  # }
   
   # select the number of alleles equal as expected from ploidy
   if (length(peaks_above_noise) == ploidy) {
-    if (rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio &&
-        abs(size_dec[ploidy] - size_dec[1]) > ru_len) { # heterozygous
+    if ( rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio &&
+         size_dec[1] - size_dec[ploidy] < 0) { # heterozygous
       
       frag_rfu2 <- rfu_dec$x[1:ploidy] |> num_to_chr()
       frag_rfu2_index <- rfu_dec$ix[1:ploidy]
-      frag_size2 <- frag_size[frag_rfu2_index] |> sort() |> num_to_chr()
+      frag_size2 <- frag_size[frag_rfu2_index] |> num_to_chr()
+      
+    } else if (rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio &&
+               size_dec[1] - size_dec[ploidy] > 0 && 
+               size_dec[1] - size_dec[ploidy] > ru_len) { # heterozygous
+      
+      frag_rfu2 <- rfu_dec$x[1:ploidy] |> num_to_chr()
+      frag_rfu2_index <- rfu_dec$ix[1:ploidy]
+      frag_size2 <- frag_size[frag_rfu2_index] |> num_to_chr()
       
     } else if (rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio && 
-               abs(size_dec[ploidy] - size_dec[1]) <= ru_len &&
+               size_dec[1] - size_dec[ploidy] > 0 &&
+               size_dec[1] - size_dec[ploidy] <= ru_len &&
                rfu_dec$x[ploidy]/rfu_dec$x[1] >= stutter_ratio) { # heterozygous
       
       frag_rfu2 <- rfu_dec$x[1:ploidy] |> num_to_chr()
       frag_rfu2_index <- rfu_dec$ix[1:ploidy]
-      frag_size2 <- frag_size[frag_rfu2_index] |> sort() |> num_to_chr()
+      frag_size2 <- frag_size[frag_rfu2_index] |> num_to_chr()
       
     } else { # homozygous
       frag_rfu2 <- rfu_dec$x[1] |> num_to_chr()
@@ -546,7 +567,6 @@ allele_caller <- function(f, r, ploidy, peak_ratio, stutter_ratio, noise_level) 
     frag_rfu2 <- "too many peaks"
     frag_size2 <- "too many peaks"
   }
-  
   out <- list(frag_size2, frag_rfu2)
   names(out) <- c("size", "intensity")
   return(out)
