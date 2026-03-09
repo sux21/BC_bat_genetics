@@ -617,7 +617,7 @@ allele_caller <- function(f, r, ploidy, peak_ratio, stutter_ratio, noise_level) 
   peaks_above_noise <- frag_rfu[frag_rfu > noise_max_rfu]
   
   # select the number of alleles as expected from ploidy
-  if (length(peaks_above_noise) == ploidy) {
+  if (unique(!is.na(frag_size)) && length(peaks_above_noise) == ploidy) {
     if ( rfu_dec$x[ploidy]/rfu_dec$x[1] >= peak_ratio &&
          size_dec[1] - size_dec[ploidy] < 0) { # heterozygous
       
